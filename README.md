@@ -40,6 +40,46 @@ CodeMirror.fromTextArea(document.getElementById("textarea"), {
 
 That's it!
 
+## Other languages
+In order to use another language instead of `en_US` you just have to provide an additional parameter : `language
+
+This parameter can take various formats :
+- the locale string format (eg: `fr_FR` or `es`)
+- an object containing your custom dictionary links following this format :
+```
+{
+	aff: "url of the .aff file",
+	dic: "url of the .dic file"
+}
+```
+
+The actually managed locales are listed in [`dictionaries.js`](/src/js/dictionaries.js). If your locale is missing, you have the corresponding `.aff` and `.dic` files with you and want them added to this library, please try and upload them to [this repository](https://github.com/titoBouzout/Dictionaries) that is listing them all, and open an issue here for me to update the `dictionaries.js` file with your locale ! :)
+
+If your locale is not found, or you do not specify one, the English (`en` locale) dictionary will be loaded.
+
+### Examples of usage
+
+#### With string locale
+
+```JS
+CodeMirrorSpellChecker({
+	codeMirrorInstance: CodeMirror,
+	language: "en_GB",
+});
+```
+
+#### With links object
+
+```JS
+CodeMirrorSpellChecker({
+	codeMirrorInstance: CodeMirror,
+	language: {
+		aff: "https://github.com/titoBouzout/Dictionaries/blob/master/Bulgarian.aff",
+		dic: "https://github.com/titoBouzout/Dictionaries/blob/master/Bulgarian.dic",
+	},
+});
+```
+
 ## Customizing
 You can customize the misspelled word appearance by updating the CSS. All misspelled words will have the `.cm-spell-error` class.
 
