@@ -22,20 +22,20 @@ var banner = ["/**",
 	" */",
 	""].join("\n");
 
-gulp.task("prettify-js", [], function() {
+gulp.task("prettify-js", function() {
 	return gulp.src("./src/js/spell-checker.js")
 		.pipe(prettify({js: {brace_style: "collapse", indent_char: "\t", indent_size: 1, max_preserve_newlines: 3, space_before_conditional: false}}))
 		.pipe(gulp.dest("./src/js"));
 });
 
-gulp.task("prettify-css", [], function() {
+gulp.task("prettify-css", function() {
 	return gulp.src("./src/css/spell-checker.css")
 		.pipe(prettify({css: {indentChar: "\t", indentSize: 1}}))
 		.pipe(gulp.dest("./src/css"));
 });
 
-gulp.task("lint", ["prettify-js"], function() {
-	gulp.src("./src/js/**/*.js")
+gulp.task("lint", function() {
+	return gulp.src("./src/js/**/*.js")
 		.pipe(debug())
 		.pipe(eslint())
 		.pipe(eslint.format())
@@ -47,7 +47,7 @@ function taskBrowserify(opts) {
 		.bundle();
 }
 
-gulp.task("browserify:debug", ["lint"], function() {
+gulp.task("browserify:debug", function() {
 	return taskBrowserify({debug:true, standalone:"CodeMirrorSpellChecker"})
 		.pipe(source("spell-checker.debug.js"))
 		.pipe(buffer())
@@ -55,7 +55,7 @@ gulp.task("browserify:debug", ["lint"], function() {
 		.pipe(gulp.dest("./debug/"));
 });
 
-gulp.task("browserify", ["lint"], function() {
+gulp.task("browserify", function() {
 	return taskBrowserify({standalone:"CodeMirrorSpellChecker"})
 		.pipe(source("spell-checker.js"))
 		.pipe(buffer())
@@ -63,22 +63,23 @@ gulp.task("browserify", ["lint"], function() {
 		.pipe(gulp.dest("./debug/"));
 });
 
-gulp.task("scripts", ["browserify:debug", "browserify", "lint"], function() {
+gulp.task("scripts",
+gulp.series("prettify-js", "lint", gulp.parallel("browserify:debug", "browserify"), function() {
 	var js_files = ["./debug/spell-checker.js"];
-	
+
 	return gulp.src(js_files)
 		.pipe(concat("spell-checker.min.js"))
 		.pipe(uglify())
 		.pipe(buffer())
 		.pipe(header(banner, {pkg: pkg}))
 		.pipe(gulp.dest("./dist/"));
-});
+}));
 
-gulp.task("styles", ["prettify-css"], function() {
+gulp.task("styles", gulp.series("prettify-css", function() {
 	var css_files = [
 		"./src/css/*.css",
 	];
-	
+
 	return gulp.src(css_files)
 		.pipe(concat("spell-checker.css"))
 		.pipe(buffer())
@@ -89,6 +90,8 @@ gulp.task("styles", ["prettify-css"], function() {
 		.pipe(buffer())
 		.pipe(header(banner, {pkg: pkg}))
 		.pipe(gulp.dest("./dist/"));
-});
+}));
 
-gulp.task("default", ["scripts", "styles"]);
+gulp.task("default",
+	gulp.parallel("scripts", "styles")
+);

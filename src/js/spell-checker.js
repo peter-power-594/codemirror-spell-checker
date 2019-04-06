@@ -32,24 +32,28 @@ function CodeMirrorSpellChecker(options) {
 	options.codeMirrorInstance.defineMode("spell-checker", function(config) {
 		// Load AFF/DIC data
 		var affUrl, dicUrl;
-		if(undefined === options.language){
-			{affUrl, dicUrl} = dictionaries["en"];
-		}
-		else if ("string" === typeof options.language) {
-			if (dictionaries.hasOwnProperty(options.language)) {
-				{affUrl, dicUrl} = dictionaries[options.language];
+		if(undefined === options.language) {
+			affUrl = dictionaries["en"].aff;
+			dicUrl = dictionaries["en"].dic;
+		} else if("string" === typeof options.language) {
+			if(dictionaries.hasOwnProperty(options.language)) {
+				affUrl = dictionaries[options.language].aff;
+				dicUrl = dictionaries[options.language].dic;
 			} else {
 				// Getting the xx part of a xx_XX locale format for generic language support.
 				var countryLocale = options.language.slice(0, options.language.indexOf("_"));
-				if (dictionaries.hasOwnProperty(countryLocale)) {
-					{affUrl, dicUrl} = dictionaries[countryLocale];
+				if(dictionaries.hasOwnProperty(countryLocale)) {
+					affUrl = dictionaries[countryLocale].aff;
+					dicUrl = dictionaries[countryLocale].dic;
 				} else {
 					console.log("This locale is not yet supported, defaulting to English (en) dictionary.");
-					{affUrl, dicUrl} = dictionaries["en"];
+					affUrl = dictionaries["en"].aff;
+					dicUrl = dictionaries["en"].dic;
 				}
 			}
 		} else {
-			{affUrl, dicUrl} = options.language;
+			affUrl = options.language.aff;
+			dicUrl = options.language.dic;
 		}
 
 		if(!CodeMirrorSpellChecker.aff_loading) {

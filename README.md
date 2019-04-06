@@ -9,19 +9,17 @@ Spell checking so simple, you can set up in 60 seconds. It will highlight any mi
 
 Via [npm](https://www.npmjs.com/package/codemirror-spell-checker).
 ```
-npm install codemirror-spell-checker --save
+npm install TristanPouliquen/codemirror-spell-checker --save
 ```
 
 Via [bower](https://www.bower.io).
 ```
-bower install codemirror-spell-checker --save
+bower install git@github.com:TristanPouliquen/codemirror-spell-checker.git --save
 ```
 
-Via [jsDelivr](https://www.jsdelivr.com/projects/codemirror.spell-checker). *Please note, jsDelivr may take a few days to update to the latest release.*
-
 ```HTML
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/codemirror.spell-checker/latest/spell-checker.min.css">
-<script src="https://cdn.jsdelivr.net/codemirror.spell-checker/latest/spell-checker.min.js"></script>
+<link rel="stylesheet" href="https://github.com/TristanPouliquen/codemirror-spell-checker/blob/master/dist/spell-checker.min.css">
+<script src="https://github.com/TristanPouliquen/codemirror-spell-checker/blob/master/dist/spell-checker.min.js"></script>
 ```
 
 ## Quick start
