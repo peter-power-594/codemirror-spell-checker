@@ -29,11 +29,6 @@ gulp.task("prettify-js", function() {
 		.pipe(gulp.dest("./src/js"));
 });
 
-gulp.task("prettify-css", function() {
-	return gulp.src("./src/css/spell-checker.css")
-		.pipe(prettify({css: {indentChar: "\t", indentSize: 1}}))
-		.pipe(gulp.dest("./src/css"));
-});
 
 gulp.task("lint", function() {
 	return gulp.src("./src/js/**/*.js")
@@ -76,23 +71,7 @@ gulp.series("prettify-js", "lint", gulp.parallel("browserify:debug", "browserify
 		.pipe(gulp.dest("./dist/"));
 }));
 
-gulp.task("styles", gulp.series("prettify-css", function() {
-	var css_files = [
-		"./src/css/*.css",
-	];
-
-	return gulp.src(css_files)
-		.pipe(concat("spell-checker.css"))
-		.pipe(buffer())
-		.pipe(header(banner, {pkg: pkg}))
-		.pipe(gulp.dest("./debug/"))
-		.pipe(minifycss())
-		.pipe(rename("spell-checker.min.css"))
-		.pipe(buffer())
-		.pipe(header(banner, {pkg: pkg}))
-		.pipe(gulp.dest("./dist/"));
-}));
 
 gulp.task("default",
-	gulp.parallel("scripts", "styles")
+	gulp.parallel("scripts")
 );

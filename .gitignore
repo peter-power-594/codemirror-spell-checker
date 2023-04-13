@@ -1,4 +1,6 @@
 localtesting/*
 node_modules/
-
 package-lock.json
+nbproject/
+debug/*
+dist/*
