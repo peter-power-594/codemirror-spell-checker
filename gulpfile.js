@@ -19,6 +19,7 @@ var banner = ["/**",
 	" * Copyright <%= pkg.company %>",
 	" * @link <%= pkg.homepage %>",
 	" * @license <%= pkg.license %>",
+	" * Modified by Pierre-Henri Lavigne for the Wordpress Plugin Markup Markdown",
 	" */",
 	""].join("\n");
 

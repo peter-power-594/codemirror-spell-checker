@@ -4,7 +4,6 @@
 
 // Requires
 var Typo = require("typo-js");
-var dictionaries = require("./dictionaries");
 
 // Create function
 function CodeMirrorSpellChecker(options) {
@@ -31,67 +30,95 @@ function CodeMirrorSpellChecker(options) {
 	// Define the new mode
 	options.codeMirrorInstance.defineMode("spell-checker", function(config) {
 		// Load AFF/DIC data
-		var affUrl, dicUrl;
+		var affUrl = [],
+			dicUrl = [],
+			shortLang = "";
 		if(undefined === options.language) {
-			affUrl = dictionaries["en"].aff;
-			dicUrl = dictionaries["en"].dic;
+			// Disable spell check by default
 		} else if("string" === typeof options.language) {
-			if(dictionaries.hasOwnProperty(options.language)) {
-				affUrl = dictionaries[options.language].aff;
-				dicUrl = dictionaries[options.language].dic;
+			// Disable predefined dictionnaries
+		} else if(options.language.aff && options.language.dic) {
+			affUrl.push(options.language.aff);
+			dicUrl.push(options.language.dic);
+			shortLang = options.language.code.replace(/_.*/, "");
+			if(options.language.code) {
+				CodeMirrorSpellChecker.langs.push(shortLang);
+				CodeMirrorSpellChecker.lang = shortLang;
 			} else {
-				// Getting the xx part of a xx_XX locale format for generic language support.
-				var countryLocale = options.language.slice(0, options.language.indexOf("_"));
-				if(dictionaries.hasOwnProperty(countryLocale)) {
-					affUrl = dictionaries[countryLocale].aff;
-					dicUrl = dictionaries[countryLocale].dic;
-				} else {
-					console.log("This locale is not yet supported, defaulting to English (en) dictionary.");
-					affUrl = dictionaries["en"].aff;
-					dicUrl = dictionaries["en"].dic;
-				}
+				CodeMirrorSpellChecker.langs.push("def");
+				CodeMirrorSpellChecker.lang = "def";
 			}
 		} else {
-			affUrl = options.language.aff;
-			dicUrl = options.language.dic;
-		}
-
-		if(!CodeMirrorSpellChecker.aff_loading) {
-			CodeMirrorSpellChecker.aff_loading = true;
-			var xhr_aff = new XMLHttpRequest();
-			xhr_aff.open("GET", affUrl, true);
-			xhr_aff.onload = function() {
-				if(xhr_aff.readyState === 4 && xhr_aff.status === 200) {
-					CodeMirrorSpellChecker.aff_data = xhr_aff.responseText;
-					CodeMirrorSpellChecker.num_loaded++;
-
-					if(CodeMirrorSpellChecker.num_loaded == 2) {
-						CodeMirrorSpellChecker.typo = new Typo("en_US", CodeMirrorSpellChecker.aff_data, CodeMirrorSpellChecker.dic_data, {
-							platform: "any"
-						});
+			for(var lang in options.language) {
+				if(options.language.hasOwnProperty(lang)) {
+					shortLang = options.language[lang].code.replace(/_.*/, "");
+					if(options.language[lang].aff && options.language[lang].dic) {
+						affUrl.push(options.language[lang].aff);
+						dicUrl.push(options.language[lang].dic);
+						CodeMirrorSpellChecker.langs.push(shortLang);
+						if(!CodeMirrorSpellChecker.lang || !CodeMirrorSpellChecker.lang.length) {
+							CodeMirrorSpellChecker.lang = shortLang;
+						}
 					}
 				}
-			};
-			xhr_aff.send(null);
+			}
 		}
 
-		if(!CodeMirrorSpellChecker.dic_loading) {
-			CodeMirrorSpellChecker.dic_loading = true;
-			var xhr_dic = new XMLHttpRequest();
-			xhr_dic.open("GET", dicUrl, true);
-			xhr_dic.onload = function() {
-				if(xhr_dic.readyState === 4 && xhr_dic.status === 200) {
-					CodeMirrorSpellChecker.dic_data = xhr_dic.responseText;
-					CodeMirrorSpellChecker.num_loaded++;
+		// Load the dictionnaries data
+		if(CodeMirrorSpellChecker.loading < 0) {
+			CodeMirrorSpellChecker.loading = 0;
+			var myXHR,
+				getDicData = function() {
+					myXHR = new XMLHttpRequest();
+					myXHR.open("GET", dicUrl[CodeMirrorSpellChecker.loading], true);
+					myXHR.onload = myCallBack;
+					myXHR.send(null);
+				},
+				getAffData = function() {
+					myXHR = new XMLHttpRequest();
+					myXHR.open("GET", affUrl[CodeMirrorSpellChecker.loading], true);
+					myXHR.onload = myCallBack;
+					myXHR.send(null);
+				},
+				myCallBack = function() {
+					if(myXHR.readyState === 4 && myXHR.status === 200) {
+						CodeMirrorSpellChecker.num_loaded++;
+						var currLang = CodeMirrorSpellChecker.langs[CodeMirrorSpellChecker.loading];
 
-					if(CodeMirrorSpellChecker.num_loaded == 2) {
-						CodeMirrorSpellChecker.typo = new Typo("en_US", CodeMirrorSpellChecker.aff_data, CodeMirrorSpellChecker.dic_data, {
-							platform: "any"
-						});
+						if(CodeMirrorSpellChecker.num_loaded == 1) {
+							CodeMirrorSpellChecker.dic_data[currLang] = myXHR.responseText;
+							setTimeout(getAffData, 1000);
+						} else if(CodeMirrorSpellChecker.num_loaded == 2) {
+							CodeMirrorSpellChecker.aff_data[currLang] = myXHR.responseText;
+							CodeMirrorSpellChecker.typo[currLang] = new Typo(currLang,
+								CodeMirrorSpellChecker.aff_data[currLang],
+								CodeMirrorSpellChecker.dic_data[currLang], {
+									platform: "any"
+								}
+							);
+							CodeMirrorSpellChecker.aff_data[currLang] = null;
+							CodeMirrorSpellChecker.dic_data[currLang] = null;
+							if(CodeMirrorSpellChecker.loading < CodeMirrorSpellChecker.langs.length - 1) {
+								CodeMirrorSpellChecker.loading++;
+								CodeMirrorSpellChecker.num_loaded = 0;
+								setTimeout(getDicData, 1000);
+							} else {
+								setTimeout(function() {
+									document.dispatchEvent(new Event("CodeMirrorSpellCheckerReady"));
+								}, 1000);
+							}
+						}
+					} else if(myXHR.readyState === 4 && myXHR.status !== 200) {
+						CodeMirrorSpellChecker.num_loaded++;
+						if(window.console && window.console.log) {
+							window.console.log("CodeMirrorSpellChecker: Error while retrieving dictionaries data");
+						}
+						setTimeout(function() {
+							document.dispatchEvent(new Event("CodeMirrorSpellCheckerReady"));
+						}, 1000);
 					}
-				}
-			};
-			xhr_dic.send(null);
+				};
+			getDicData(); // Initialize
 		}
 
 
@@ -100,6 +127,9 @@ function CodeMirrorSpellChecker(options) {
 
 
 		// Create the overlay and such
+
+		var i18n = 0;
+
 		var overlay = {
 			token: function(stream) {
 				var ch = stream.peek();
@@ -115,8 +145,33 @@ function CodeMirrorSpellChecker(options) {
 					stream.next();
 				}
 
-				if(CodeMirrorSpellChecker.typo && !CodeMirrorSpellChecker.typo.check(word))
-					return "spell-error"; // CSS class: cm-spell-error
+				// HTML <span lang="fr">Mon texte</span> will be parsed in *CodeMirror5* 
+				// by order as the following _words_ (ch)  : span lang fr Mon texte span 
+				// Warning : "_" is considered as delimiter so  
+				// <span lang="en_US">My text</span> will be parsed in *CodeMirror5*
+				// by order as the following _words_ (ch) : span lang en US My text span 
+				if(word === "span") {
+					if(i18n === 3) {
+						// span from the </span>, switch back to default language
+						CodeMirrorSpellChecker.lang = CodeMirrorSpellChecker.langs[0];
+						i18n = 0;
+					} else {
+						// Beginning of a <span>, standby to look for a lang attribute
+						i18n = 1;
+					}
+				} else if(word === "lang") {
+					// **Probably** a lang attribute
+					i18n = 2;
+				} else if(i18n === 2) {
+					i18n = 3;
+					// We've got a match. At this point the _word_ value is the lang'sattribute data !
+					if(CodeMirrorSpellChecker.typo[word]) {
+						// Not 100% safe so a check on an existing dict is still required
+						CodeMirrorSpellChecker.lang = word;
+					}
+				} else if(CodeMirrorSpellChecker.typo[CodeMirrorSpellChecker.lang] && !CodeMirrorSpellChecker.typo[CodeMirrorSpellChecker.lang].check(word)) {
+					return "spell-error " + CodeMirrorSpellChecker.lang; // CSS class: cm-spell-error
+				}
 
 				return null;
 			}
@@ -133,11 +188,12 @@ function CodeMirrorSpellChecker(options) {
 
 // Initialize data globally to reduce memory consumption
 CodeMirrorSpellChecker.num_loaded = 0;
-CodeMirrorSpellChecker.aff_loading = false;
-CodeMirrorSpellChecker.dic_loading = false;
-CodeMirrorSpellChecker.aff_data = "";
-CodeMirrorSpellChecker.dic_data = "";
-CodeMirrorSpellChecker.typo;
+CodeMirrorSpellChecker.loading = -1;
+CodeMirrorSpellChecker.aff_data = {};
+CodeMirrorSpellChecker.dic_data = {};
+CodeMirrorSpellChecker.typo = {};
+CodeMirrorSpellChecker.langs = [];
+CodeMirrorSpellChecker.lang = "";
 
 
 // Export
