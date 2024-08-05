@@ -123,7 +123,7 @@ function CodeMirrorSpellChecker(options) {
 
 
 		// Define what separates a word
-		var rx_word = "!\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~ ";
+		var rx_word = "!\"#$%&()*+,-./:;<=>?@[\\]^_`{|}’~ ";
 
 
 		// Create the overlay and such
